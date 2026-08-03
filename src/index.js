@@ -14,9 +14,7 @@ function loadContacts() {
 }
 
 async function main() {
-  console.log('Iniciando automacao do WhatsApp...');
-
-  await whatsapp.connect();
+  console.log('Iniciando automacao do WhatsApp (modo nativo)...');
 
   const contacts = loadContacts();
 

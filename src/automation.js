@@ -13,12 +13,6 @@ async function handleNewEmail(email, whatsapp, contacts) {
     return;
   }
 
-  const exists = await whatsapp.isRegisteredOnWhatsApp(phoneNumber);
-  if (!exists) {
-    console.log(`Numero ${phoneNumber} (${email.from}) nao esta registrado no WhatsApp.`);
-    return;
-  }
-
   await whatsapp.sendMessage(
     phoneNumber,
     `Ola! Recebemos seu e-mail "${email.subject}". Em breve daremos retorno por aqui no WhatsApp.`

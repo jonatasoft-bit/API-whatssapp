@@ -1,65 +1,68 @@
+const os = require('os');
+const fs = require('fs');
 const path = require('path');
-const pino = require('pino');
-const qrcode = require('qrcode-terminal');
-const {
-  default: makeWASocket,
-  useMultiFileAuthState,
-  DisconnectReason,
-} = require('@whiskeysockets/baileys');
+const { exec } = require('child_process');
+const { promisify } = require('util');
 
-const AUTH_DIR = path.join(__dirname, '..', 'data', 'auth');
+const execAsync = promisify(exec);
 
-let sock = null;
-
-async function connect() {
-  const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
-
-  sock = makeWASocket({
-    auth: state,
-    logger: pino({ level: 'silent' }),
-  });
-
-  sock.ev.on('creds.update', saveCreds);
-
-  sock.ev.on('connection.update', (update) => {
-    const { connection, lastDisconnect, qr } = update;
-
-    if (qr) {
-      console.log('Escaneie o QR code abaixo no WhatsApp (Aparelhos conectados):');
-      qrcode.generate(qr, { small: true });
-    }
-
-    if (connection === 'open') {
-      console.log('WhatsApp conectado.');
-    }
-
-    if (connection === 'close') {
-      const shouldReconnect =
-        lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
-      console.log('Conexao com WhatsApp encerrada.', shouldReconnect ? 'Reconectando...' : 'Sessao deslogada.');
-      if (shouldReconnect) {
-        connect();
-      }
-    }
-  });
-
-  return sock;
+function toDigits(phoneNumber) {
+  return phoneNumber.replace(/\D/g, '');
 }
 
-function toJid(phoneNumber) {
-  const digits = phoneNumber.replace(/\D/g, '');
-  return `${digits}@s.whatsapp.net`;
+function buildUri(phoneNumber, text) {
+  const digits = toDigits(phoneNumber);
+  const encoded = encodeURIComponent(text);
+  return `whatsapp://send?phone=${digits}&text=${encoded}`;
 }
 
-async function isRegisteredOnWhatsApp(phoneNumber) {
-  const jid = toJid(phoneNumber);
-  const [result] = await sock.onWhatsApp(jid);
-  return Boolean(result?.exists);
+async function sendMessageWindows(uri) {
+  const ps1 = path.join(os.tmpdir(), `wa_${Date.now()}.ps1`);
+  const script = [
+    `Start-Process '${uri}'`,
+    `Start-Sleep -Seconds 5`,
+    `$ws = New-Object -ComObject WScript.Shell`,
+    `if ($ws.AppActivate('WhatsApp')) {`,
+    `  Start-Sleep -Milliseconds 800`,
+    `  $ws.SendKeys('{ENTER}')`,
+    `}`,
+  ].join('\r\n');
+
+  fs.writeFileSync(ps1, script, 'utf8');
+  try {
+    await execAsync(`powershell -NoProfile -ExecutionPolicy Bypass -File "${ps1}"`);
+  } finally {
+    fs.unlinkSync(ps1);
+  }
+}
+
+async function sendMessageMac(uri) {
+  await execAsync(`open '${uri}'`);
+  await new Promise((r) => setTimeout(r, 5000));
+  await execAsync(`osascript -e 'tell application "System Events" to key code 36'`);
+}
+
+async function sendMessageLinux(uri) {
+  await execAsync(`xdg-open '${uri}'`);
+  await new Promise((r) => setTimeout(r, 5000));
+  await execAsync(`xdotool key Return`);
 }
 
 async function sendMessage(phoneNumber, text) {
-  const jid = toJid(phoneNumber);
-  await sock.sendMessage(jid, { text });
+  const uri = buildUri(phoneNumber, text);
+  const platform = process.platform;
+
+  console.log(`Abrindo WhatsApp nativo para ${toDigits(phoneNumber)}...`);
+
+  if (platform === 'win32') {
+    await sendMessageWindows(uri);
+  } else if (platform === 'darwin') {
+    await sendMessageMac(uri);
+  } else {
+    await sendMessageLinux(uri);
+  }
+
+  console.log(`Mensagem enviada via WhatsApp nativo para ${toDigits(phoneNumber)}.`);
 }
 
-module.exports = { connect, isRegisteredOnWhatsApp, sendMessage };
+module.exports = { sendMessage };
