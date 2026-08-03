@@ -1,0 +1,33 @@
+{
+  "_instrucoes": "Copie este arquivo para o local correto abaixo e renomeie para claude_desktop_config.json",
+  "_caminhos": {
+    "macOS": "~/Library/Application Support/Claude/claude_desktop_config.json",
+    "Windows": "%APPDATA%\\Claude\\claude_desktop_config.json"
+  },
+  "_nota": "Substitua SEU_USUARIO pelo seu nome de usuario do sistema",
+
+  "mcpServers": {
+    "composio": {
+      "command": "npx",
+      "args": ["-y", "@composio/rube-mcp"]
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/Users/SEU_USUARIO/Kit-Piloto-Automatico-V30-DISTRIB",
+        "/Users/SEU_USUARIO/Desktop",
+        "/Users/SEU_USUARIO/Documents"
+      ]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-playwright"]
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+    }
+  }
+}

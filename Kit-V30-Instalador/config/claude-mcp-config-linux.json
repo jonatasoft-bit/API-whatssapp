@@ -1,0 +1,33 @@
+{
+  "_instrucoes": "Arquivo gerado automaticamente pelo instalador Linux do Kit V30",
+  "_caminho": "~/.claude/settings.json",
+
+  "mcpServers": {
+    "composio": {
+      "command": "npx",
+      "args": ["-y", "@composio/rube-mcp"]
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/home/SEU_USUARIO/Documents",
+        "/home/SEU_USUARIO/Desktop",
+        "/home/SEU_USUARIO/Kit-Piloto-Automatico-V30-DISTRIB"
+      ]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-playwright"]
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+    },
+    "whatsapp": {
+      "command": "node",
+      "args": ["~/mcps/whatsapp-mcp/dist/index.js"]
+    }
+  }
+}
